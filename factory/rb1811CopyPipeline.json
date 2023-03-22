@@ -1,5 +1,13 @@
 {
 	"name": "rb1811CopyPipeline",
+	"properties": {
+		"globalParameters": {
+			"SFolderName": {
+				"type": "string",
+				"value": "source2"
+			}
+		}
+	},
 	"location": "westus2",
 	"identity": {
 		"type": "SystemAssigned",
