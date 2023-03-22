@@ -7,10 +7,6 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "rb1811CopyPipeline"
 		},
-		"AzureBlobStorage1_connectionString": {
-			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'AzureBlobStorage1'"
-		},
 		"GeneralizedJsonCopyLS_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'GeneralizedJsonCopyLS'"
@@ -22,25 +18,20 @@
 		"rb1811ls1_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'rb1811ls1'"
+		},
+		"rb1811KV_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://rb1811KV.vault.azure.net/"
+		},
+		"AzureBlobStorage1_properties_typeProperties_connectionString_secretName": {
+			"type": "string",
+			"defaultValue": "rb1811sa-secret"
 		}
 	},
 	"variables": {
 		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
 	},
 	"resources": [
-		{
-			"name": "[concat(parameters('factoryName'), '/AzureBlobStorage1')]",
-			"type": "Microsoft.DataFactory/factories/linkedServices",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"annotations": [],
-				"type": "AzureBlobStorage",
-				"typeProperties": {
-					"connectionString": "[parameters('AzureBlobStorage1_connectionString')]"
-				}
-			},
-			"dependsOn": []
-		},
 		{
 			"name": "[concat(parameters('factoryName'), '/GeneralizedJsonCopyLS')]",
 			"type": "Microsoft.DataFactory/factories/linkedServices",
@@ -68,6 +59,19 @@
 				"type": "AzureBlobStorage",
 				"typeProperties": {
 					"connectionString": "[parameters('MixedLS_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/rb1811KV')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureKeyVault",
+				"typeProperties": {
+					"baseUrl": "[parameters('rb1811KV_properties_typeProperties_baseUrl')]"
 				}
 			},
 			"dependsOn": []
@@ -288,42 +292,26 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/pipeline3')]",
-			"type": "Microsoft.DataFactory/factories/datasets",
+			"name": "[concat(parameters('factoryName'), '/AzureBlobStorage1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
 			"apiVersion": "2018-06-01",
 			"properties": {
-				"linkedServiceName": {
-					"referenceName": "AzureBlobStorage1",
-					"type": "LinkedServiceReference"
-				},
-				"parameters": {
-					"DFoldername": {
-						"type": "string"
-					},
-					"DFilename": {
-						"type": "string",
-						"defaultValue": " "
-					}
-				},
 				"annotations": [],
-				"type": "Binary",
+				"type": "AzureBlobStorage",
 				"typeProperties": {
-					"location": {
-						"type": "AzureBlobStorageLocation",
-						"fileName": {
-							"value": "@dataset().DFilename",
-							"type": "Expression"
+					"connectionString": {
+						"type": "AzureKeyVaultSecret",
+						"store": {
+							"referenceName": "rb1811KV",
+							"type": "LinkedServiceReference"
 						},
-						"folderPath": {
-							"value": "@dataset().DFoldername",
-							"type": "Expression"
-						},
-						"container": "json"
+						"secretName": "[parameters('AzureBlobStorage1_properties_typeProperties_connectionString_secretName')]",
+						"secretVersion": "5f7412062789421a91b4ebb5254ccee2"
 					}
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage1')]"
+				"[concat(variables('factoryId'), '/linkedServices/rb1811KV')]"
 			]
 		},
 		{
@@ -446,6 +434,319 @@
 			},
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/datasets/Json1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pipeline3')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"DFoldername": {
+						"type": "string"
+					},
+					"DFilename": {
+						"type": "string",
+						"defaultValue": " "
+					}
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": {
+							"value": "@dataset().DFilename",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@dataset().DFoldername",
+							"type": "Expression"
+						},
+						"container": "json"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DF2')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "EmpDatSet",
+								"type": "DatasetReference"
+							},
+							"name": "Emp"
+						},
+						{
+							"dataset": {
+								"referenceName": "DepDatSet",
+								"type": "DatasetReference"
+							},
+							"name": "Dep"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "Output1",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [
+						{
+							"name": "Innerjoin1"
+						}
+					],
+					"scriptLines": [
+						"parameters{",
+						"     OFileName as string",
+						"}",
+						"source(output(",
+						"          EMPLOYEE_ID as string,",
+						"          FIRST_NAME as string,",
+						"          LAST_NAME as string,",
+						"          EMAIL as string,",
+						"          PHONE_NUMBER as string,",
+						"          HIRE_DATE as string,",
+						"          JOB_ID as string,",
+						"          SALARY as string,",
+						"          COMMISSION_PCT as string,",
+						"          MANAGER_ID as string,",
+						"          DEPARTMENT_ID as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> Emp",
+						"source(output(",
+						"          DEPARTMENT_ID as string,",
+						"          DEPARTMENT_NAME as string,",
+						"          MANAGER_ID as string,",
+						"          LOCATION_ID as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> Dep",
+						"Emp, Dep join(Emp@DEPARTMENT_ID == Dep@DEPARTMENT_ID,",
+						"     joinType:'inner',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> Innerjoin1",
+						"Innerjoin1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     partitionFileNames:[($OFileName)],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     mapColumn(",
+						"          FIRST_NAME,",
+						"          LAST_NAME,",
+						"          DEPARTMENT_NAME,",
+						"          SALARY,",
+						"          MANAGER_ID = Dep@MANAGER_ID",
+						"     ),",
+						"     partitionBy('hash', 1)) ~> sink1"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/EmpDatSet')]",
+				"[concat(variables('factoryId'), '/datasets/DepDatSet')]",
+				"[concat(variables('factoryId'), '/datasets/Output1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DF3')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "EmpDatSet",
+								"type": "DatasetReference"
+							},
+							"name": "Emp"
+						},
+						{
+							"dataset": {
+								"referenceName": "DepDatSet",
+								"type": "DatasetReference"
+							},
+							"name": "Dep"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "Output1",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						},
+						{
+							"dataset": {
+								"referenceName": "Output1",
+								"type": "DatasetReference"
+							},
+							"name": "sink2"
+						},
+						{
+							"dataset": {
+								"referenceName": "Output1",
+								"type": "DatasetReference"
+							},
+							"name": "sink3"
+						}
+					],
+					"transformations": [
+						{
+							"name": "Innerjoin1"
+						},
+						{
+							"name": "select1"
+						},
+						{
+							"name": "aggregate1"
+						},
+						{
+							"name": "filter1"
+						},
+						{
+							"name": "exists1"
+						},
+						{
+							"name": "split1"
+						},
+						{
+							"name": "derivedColumn1"
+						},
+						{
+							"name": "sort1"
+						},
+						{
+							"name": "pivot1",
+							"description": "for each department tell me how many managers are there and how many employees do they have. This you will get by reading the table row wise\n\n\nif you read column wise then it will be which managers handle multiple departments"
+						},
+						{
+							"name": "window1"
+						}
+					],
+					"scriptLines": [
+						"parameters{",
+						"     OFileName as string",
+						"}",
+						"source(output(",
+						"          EMPLOYEE_ID as integer,",
+						"          FIRST_NAME as string,",
+						"          LAST_NAME as string,",
+						"          EMAIL as string,",
+						"          PHONE_NUMBER as string,",
+						"          HIRE_DATE as string,",
+						"          JOB_ID as string,",
+						"          SALARY as integer,",
+						"          COMMISSION_PCT as string,",
+						"          MANAGER_ID as integer,",
+						"          DEPARTMENT_ID as integer",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> Emp",
+						"source(output(",
+						"          DEPARTMENT_ID as integer,",
+						"          DEPARTMENT_NAME as string,",
+						"          MANAGER_ID as integer,",
+						"          LOCATION_ID as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> Dep",
+						"Emp, Dep join(Emp@DEPARTMENT_ID == Dep@DEPARTMENT_ID,",
+						"     joinType:'inner',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> Innerjoin1",
+						"Innerjoin1 select(mapColumn(",
+						"          DEPARTMENT_NAME,",
+						"          SALARY",
+						"     ),",
+						"     partitionBy('hash', 1),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select1",
+						"select1 aggregate(groupBy(DEPARTMENT_NAME),",
+						"     SALARY = sum(SALARY)) ~> aggregate1",
+						"aggregate1 filter(greaterOrEqual(SALARY, 50000)) ~> filter1",
+						"Emp, Dep exists(Emp@DEPARTMENT_ID == Dep@DEPARTMENT_ID,",
+						"     negate:false,",
+						"     partitionBy('hash', 1),",
+						"     broadcast: 'auto')~> exists1",
+						"derivedColumn1 split(greaterOrEqual(SALARY, 5000),",
+						"     disjoint: false) ~> split1@(SalaryGreaterThan5000, LessThan5000)",
+						"exists1 derive(FIRST_NAME = upper(FIRST_NAME),",
+						"     partitionBy('hash', 1)) ~> derivedColumn1",
+						"split1@SalaryGreaterThan5000 sort(asc(FIRST_NAME, true),",
+						"     partitionBy('hash', 1)) ~> sort1",
+						"Emp pivot(groupBy(DEPARTMENT_ID),",
+						"     pivotBy(MANAGER_ID),",
+						"     {} = count(MANAGER_ID),",
+						"     columnNaming: '$N$V',",
+						"     lateral: true,",
+						"     partitionBy('hash', 1)) ~> pivot1",
+						"Emp window(over(DEPARTMENT_ID),",
+						"     asc(SALARY, true),",
+						"     AvgSala = avg(SALARY),",
+						"     partitionBy('hash', 1)) ~> window1",
+						"filter1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     partitionFileNames:[($OFileName)],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     mapColumn(",
+						"          DEPARTMENT_NAME,",
+						"          SALARY",
+						"     ),",
+						"     partitionBy('hash', 1)) ~> sink1",
+						"sort1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     partitionFileNames:['SAL_GT_5000.csv'],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     mapColumn(",
+						"          EMPLOYEE_ID,",
+						"          FIRST_NAME,",
+						"          LAST_NAME,",
+						"          SALARY,",
+						"          DEPARTMENT_ID",
+						"     ),",
+						"     partitionBy('hash', 1)) ~> sink2",
+						"pivot1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     partitionFileNames:['Pivot_Managers_Dept_Relationship.csv'],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     partitionBy('hash', 1)) ~> sink3"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/EmpDatSet')]",
+				"[concat(variables('factoryId'), '/datasets/DepDatSet')]",
+				"[concat(variables('factoryId'), '/datasets/Output1')]"
 			]
 		},
 		{
@@ -1243,280 +1544,6 @@
 			"dependsOn": [
 				"[concat(variables('factoryId'), '/datasets/pipeline3')]",
 				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage1')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/DF2')]",
-			"type": "Microsoft.DataFactory/factories/dataflows",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"type": "MappingDataFlow",
-				"typeProperties": {
-					"sources": [
-						{
-							"dataset": {
-								"referenceName": "EmpDatSet",
-								"type": "DatasetReference"
-							},
-							"name": "Emp"
-						},
-						{
-							"dataset": {
-								"referenceName": "DepDatSet",
-								"type": "DatasetReference"
-							},
-							"name": "Dep"
-						}
-					],
-					"sinks": [
-						{
-							"dataset": {
-								"referenceName": "Output1",
-								"type": "DatasetReference"
-							},
-							"name": "sink1"
-						}
-					],
-					"transformations": [
-						{
-							"name": "Innerjoin1"
-						}
-					],
-					"scriptLines": [
-						"parameters{",
-						"     OFileName as string",
-						"}",
-						"source(output(",
-						"          EMPLOYEE_ID as string,",
-						"          FIRST_NAME as string,",
-						"          LAST_NAME as string,",
-						"          EMAIL as string,",
-						"          PHONE_NUMBER as string,",
-						"          HIRE_DATE as string,",
-						"          JOB_ID as string,",
-						"          SALARY as string,",
-						"          COMMISSION_PCT as string,",
-						"          MANAGER_ID as string,",
-						"          DEPARTMENT_ID as string",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> Emp",
-						"source(output(",
-						"          DEPARTMENT_ID as string,",
-						"          DEPARTMENT_NAME as string,",
-						"          MANAGER_ID as string,",
-						"          LOCATION_ID as string",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> Dep",
-						"Emp, Dep join(Emp@DEPARTMENT_ID == Dep@DEPARTMENT_ID,",
-						"     joinType:'inner',",
-						"     matchType:'exact',",
-						"     ignoreSpaces: false,",
-						"     broadcast: 'auto')~> Innerjoin1",
-						"Innerjoin1 sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     partitionFileNames:[($OFileName)],",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true,",
-						"     mapColumn(",
-						"          FIRST_NAME,",
-						"          LAST_NAME,",
-						"          DEPARTMENT_NAME,",
-						"          SALARY,",
-						"          MANAGER_ID = Dep@MANAGER_ID",
-						"     ),",
-						"     partitionBy('hash', 1)) ~> sink1"
-					]
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/EmpDatSet')]",
-				"[concat(variables('factoryId'), '/datasets/DepDatSet')]",
-				"[concat(variables('factoryId'), '/datasets/Output1')]"
-			]
-		},
-		{
-			"name": "[concat(parameters('factoryName'), '/DF3')]",
-			"type": "Microsoft.DataFactory/factories/dataflows",
-			"apiVersion": "2018-06-01",
-			"properties": {
-				"type": "MappingDataFlow",
-				"typeProperties": {
-					"sources": [
-						{
-							"dataset": {
-								"referenceName": "EmpDatSet",
-								"type": "DatasetReference"
-							},
-							"name": "Emp"
-						},
-						{
-							"dataset": {
-								"referenceName": "DepDatSet",
-								"type": "DatasetReference"
-							},
-							"name": "Dep"
-						}
-					],
-					"sinks": [
-						{
-							"dataset": {
-								"referenceName": "Output1",
-								"type": "DatasetReference"
-							},
-							"name": "sink1"
-						},
-						{
-							"dataset": {
-								"referenceName": "Output1",
-								"type": "DatasetReference"
-							},
-							"name": "sink2"
-						},
-						{
-							"dataset": {
-								"referenceName": "Output1",
-								"type": "DatasetReference"
-							},
-							"name": "sink3"
-						}
-					],
-					"transformations": [
-						{
-							"name": "Innerjoin1"
-						},
-						{
-							"name": "select1"
-						},
-						{
-							"name": "aggregate1"
-						},
-						{
-							"name": "filter1"
-						},
-						{
-							"name": "exists1"
-						},
-						{
-							"name": "split1"
-						},
-						{
-							"name": "derivedColumn1"
-						},
-						{
-							"name": "sort1"
-						},
-						{
-							"name": "pivot1",
-							"description": "for each department tell me how many managers are there and how many employees do they have. This you will get by reading the table row wise\n\n\nif you read column wise then it will be which managers handle multiple departments"
-						},
-						{
-							"name": "window1"
-						}
-					],
-					"scriptLines": [
-						"parameters{",
-						"     OFileName as string",
-						"}",
-						"source(output(",
-						"          EMPLOYEE_ID as integer,",
-						"          FIRST_NAME as string,",
-						"          LAST_NAME as string,",
-						"          EMAIL as string,",
-						"          PHONE_NUMBER as string,",
-						"          HIRE_DATE as string,",
-						"          JOB_ID as string,",
-						"          SALARY as integer,",
-						"          COMMISSION_PCT as string,",
-						"          MANAGER_ID as integer,",
-						"          DEPARTMENT_ID as integer",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> Emp",
-						"source(output(",
-						"          DEPARTMENT_ID as integer,",
-						"          DEPARTMENT_NAME as string,",
-						"          MANAGER_ID as integer,",
-						"          LOCATION_ID as string",
-						"     ),",
-						"     allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     ignoreNoFilesFound: false) ~> Dep",
-						"Emp, Dep join(Emp@DEPARTMENT_ID == Dep@DEPARTMENT_ID,",
-						"     joinType:'inner',",
-						"     matchType:'exact',",
-						"     ignoreSpaces: false,",
-						"     broadcast: 'auto')~> Innerjoin1",
-						"Innerjoin1 select(mapColumn(",
-						"          DEPARTMENT_NAME,",
-						"          SALARY",
-						"     ),",
-						"     partitionBy('hash', 1),",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true) ~> select1",
-						"select1 aggregate(groupBy(DEPARTMENT_NAME),",
-						"     SALARY = sum(SALARY)) ~> aggregate1",
-						"aggregate1 filter(greaterOrEqual(SALARY, 50000)) ~> filter1",
-						"Emp, Dep exists(Emp@DEPARTMENT_ID == Dep@DEPARTMENT_ID,",
-						"     negate:false,",
-						"     partitionBy('hash', 1),",
-						"     broadcast: 'auto')~> exists1",
-						"derivedColumn1 split(greaterOrEqual(SALARY, 5000),",
-						"     disjoint: false) ~> split1@(SalaryGreaterThan5000, LessThan5000)",
-						"exists1 derive(FIRST_NAME = upper(FIRST_NAME),",
-						"     partitionBy('hash', 1)) ~> derivedColumn1",
-						"split1@SalaryGreaterThan5000 sort(asc(FIRST_NAME, true),",
-						"     partitionBy('hash', 1)) ~> sort1",
-						"Emp pivot(groupBy(DEPARTMENT_ID),",
-						"     pivotBy(MANAGER_ID),",
-						"     {} = count(MANAGER_ID),",
-						"     columnNaming: '$N$V',",
-						"     lateral: true,",
-						"     partitionBy('hash', 1)) ~> pivot1",
-						"Emp window(over(DEPARTMENT_ID),",
-						"     asc(SALARY, true),",
-						"     AvgSala = avg(SALARY),",
-						"     partitionBy('hash', 1)) ~> window1",
-						"filter1 sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     partitionFileNames:[($OFileName)],",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true,",
-						"     mapColumn(",
-						"          DEPARTMENT_NAME,",
-						"          SALARY",
-						"     ),",
-						"     partitionBy('hash', 1)) ~> sink1",
-						"sort1 sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     partitionFileNames:['SAL_GT_5000.csv'],",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true,",
-						"     mapColumn(",
-						"          EMPLOYEE_ID,",
-						"          FIRST_NAME,",
-						"          LAST_NAME,",
-						"          SALARY,",
-						"          DEPARTMENT_ID",
-						"     ),",
-						"     partitionBy('hash', 1)) ~> sink2",
-						"pivot1 sink(allowSchemaDrift: true,",
-						"     validateSchema: false,",
-						"     partitionFileNames:['Pivot_Managers_Dept_Relationship.csv'],",
-						"     skipDuplicateMapInputs: true,",
-						"     skipDuplicateMapOutputs: true,",
-						"     partitionBy('hash', 1)) ~> sink3"
-					]
-				}
-			},
-			"dependsOn": [
-				"[concat(variables('factoryId'), '/datasets/EmpDatSet')]",
-				"[concat(variables('factoryId'), '/datasets/DepDatSet')]",
-				"[concat(variables('factoryId'), '/datasets/Output1')]"
 			]
 		},
 		{

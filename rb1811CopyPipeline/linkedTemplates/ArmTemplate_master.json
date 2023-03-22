@@ -7,10 +7,6 @@
 			"metadata": "Data Factory name",
 			"defaultValue": "rb1811CopyPipeline"
 		},
-		"AzureBlobStorage1_connectionString": {
-			"type": "secureString",
-			"metadata": "Secure string for 'connectionString' of 'AzureBlobStorage1'"
-		},
 		"GeneralizedJsonCopyLS_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'GeneralizedJsonCopyLS'"
@@ -22,6 +18,14 @@
 		"rb1811ls1_connectionString": {
 			"type": "secureString",
 			"metadata": "Secure string for 'connectionString' of 'rb1811ls1'"
+		},
+		"AzureBlobStorage1_properties_typeProperties_connectionString_secretName": {
+			"type": "string",
+			"defaultValue": "rb1811sa-secret"
+		},
+		"rb1811KV_properties_typeProperties_baseUrl": {
+			"type": "string",
+			"defaultValue": "https://rb1811KV.vault.azure.net/"
 		},
 		"containerUri": {
 			"type": "string",
@@ -50,9 +54,6 @@
 					"factoryName": {
 						"value": "[parameters('factoryName')]"
 					},
-					"AzureBlobStorage1_connectionString": {
-						"value": "[parameters('AzureBlobStorage1_connectionString')]"
-					},
 					"GeneralizedJsonCopyLS_connectionString": {
 						"value": "[parameters('GeneralizedJsonCopyLS_connectionString')]"
 					},
@@ -61,6 +62,12 @@
 					},
 					"rb1811ls1_connectionString": {
 						"value": "[parameters('rb1811ls1_connectionString')]"
+					},
+					"rb1811KV_properties_typeProperties_baseUrl": {
+						"value": "[parameters('rb1811KV_properties_typeProperties_baseUrl')]"
+					},
+					"AzureBlobStorage1_properties_typeProperties_connectionString_secretName": {
+						"value": "[parameters('AzureBlobStorage1_properties_typeProperties_connectionString_secretName')]"
 					}
 				}
 			},

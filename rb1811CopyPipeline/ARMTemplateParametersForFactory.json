@@ -5,9 +5,6 @@
 		"factoryName": {
 			"value": "rb1811CopyPipeline"
 		},
-		"AzureBlobStorage1_connectionString": {
-			"value": ""
-		},
 		"GeneralizedJsonCopyLS_connectionString": {
 			"value": ""
 		},
@@ -16,6 +13,12 @@
 		},
 		"rb1811ls1_connectionString": {
 			"value": ""
+		},
+		"AzureBlobStorage1_properties_typeProperties_connectionString_secretName": {
+			"value": "rb1811sa-secret"
+		},
+		"rb1811KV_properties_typeProperties_baseUrl": {
+			"value": "https://rb1811KV.vault.azure.net/"
 		}
 	}
 }
