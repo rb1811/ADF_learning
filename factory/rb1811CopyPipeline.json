@@ -6,6 +6,9 @@
 				"type": "string",
 				"value": "source2"
 			}
+		},
+		"globalConfigurations": {
+			"PipelineBillingEnabled": "false"
 		}
 	},
 	"location": "westus2",
