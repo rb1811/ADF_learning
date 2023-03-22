@@ -1,0 +1,10 @@
+{
+	"name": "rb1811KV",
+	"properties": {
+		"annotations": [],
+		"type": "AzureKeyVault",
+		"typeProperties": {
+			"baseUrl": "https://rb1811KV.vault.azure.net/"
+		}
+	}
+}
