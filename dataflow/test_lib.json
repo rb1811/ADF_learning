@@ -1,0 +1,14 @@
+{
+	"name": "test_lib",
+	"properties": {
+		"type": "UDFLibrary",
+		"typeProperties": {
+			"sources": [],
+			"sinks": [],
+			"transformations": [],
+			"scriptLines": [
+				"RICH_OR_POOR(integer) as string = iif(greaterOrEqual(i1, 5000), 'RICH', 'POOR')"
+			]
+		}
+	}
+}
