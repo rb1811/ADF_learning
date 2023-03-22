@@ -698,6 +698,7 @@
 						"derivedColumn1 split(greaterOrEqual(SALARY, 5000),",
 						"     disjoint: false) ~> split1@(SalaryGreaterThan5000, LessThan5000)",
 						"exists1 derive(FIRST_NAME = upper(FIRST_NAME),",
+						"          HIRE_DATE = toDate(HIRE_DATE, 'dd-MMM-yy'),",
 						"     partitionBy('hash', 1)) ~> derivedColumn1",
 						"split1@SalaryGreaterThan5000 sort(asc(FIRST_NAME, true),",
 						"     partitionBy('hash', 1)) ~> sort1",
