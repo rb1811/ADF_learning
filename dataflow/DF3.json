@@ -40,6 +40,13 @@
 						"type": "DatasetReference"
 					},
 					"name": "sink3"
+				},
+				{
+					"dataset": {
+						"referenceName": "Output1",
+						"type": "DatasetReference"
+					},
+					"name": "sink4"
 				}
 			],
 			"transformations": [
@@ -73,6 +80,12 @@
 				},
 				{
 					"name": "window1"
+				}
+			],
+			"udfLibraries": [
+				{
+					"referenceName": "test_lib",
+					"type": "DataFlowReference"
 				}
 			],
 			"scriptLines": [
@@ -127,6 +140,7 @@
 				"     disjoint: false) ~> split1@(SalaryGreaterThan5000, LessThan5000)",
 				"exists1 derive(FIRST_NAME = upper(FIRST_NAME),",
 				"          HIRE_DATE = toDate(HIRE_DATE, 'dd-MMM-yy'),",
+				"          RICH_OR_POOR = RICH_OR_POOR(SALARY),",
 				"     partitionBy('hash', 1)) ~> derivedColumn1",
 				"split1@SalaryGreaterThan5000 sort(asc(FIRST_NAME, true),",
 				"     partitionBy('hash', 1)) ~> sort1",
@@ -168,7 +182,20 @@
 				"     partitionFileNames:['Pivot_Managers_Dept_Relationship.csv'],",
 				"     skipDuplicateMapInputs: true,",
 				"     skipDuplicateMapOutputs: true,",
-				"     partitionBy('hash', 1)) ~> sink3"
+				"     partitionBy('hash', 1)) ~> sink3",
+				"split1@LessThan5000 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     partitionFileNames:['SALARY_LT_5000.csv'],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     mapColumn(",
+				"          EMPLOYEE_ID,",
+				"          FIRST_NAME,",
+				"          LAST_NAME,",
+				"          SALARY,",
+				"          RICH_OR_POOR",
+				"     ),",
+				"     partitionBy('hash', 1)) ~> sink4"
 			]
 		}
 	}
