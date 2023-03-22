@@ -1,0 +1,9 @@
+{
+	"name": "rb1811CopyPipeline",
+	"location": "westus2",
+	"identity": {
+		"type": "SystemAssigned",
+		"principalId": "eae454fd-f61d-4532-b2cf-55daaff45ba0",
+		"tenantId": "e917d152-3121-40e1-8a34-44b57e2f7711"
+	}
+}

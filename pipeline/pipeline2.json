@@ -1,0 +1,114 @@
+{
+	"name": "pipeline2",
+	"properties": {
+		"activities": [
+			{
+				"name": "Copy data1",
+				"type": "Copy",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "JsonSource",
+						"storeSettings": {
+							"type": "AzureBlobStorageReadSettings",
+							"recursive": true,
+							"enablePartitionDiscovery": false
+						},
+						"formatSettings": {
+							"type": "JsonReadSettings"
+						}
+					},
+					"sink": {
+						"type": "JsonSink",
+						"storeSettings": {
+							"type": "AzureBlobStorageWriteSettings"
+						},
+						"formatSettings": {
+							"type": "JsonWriteSettings"
+						}
+					},
+					"enableStaging": false
+				},
+				"inputs": [
+					{
+						"referenceName": "Json1",
+						"type": "DatasetReference",
+						"parameters": {
+							"DSStorageAccountName": {
+								"value": "@pipeline().parameters.StorageAccountName",
+								"type": "Expression"
+							},
+							"FolderName": {
+								"value": "@pipeline().parameters.SFolderName",
+								"type": "Expression"
+							},
+							"FileName": {
+								"value": "@pipeline().parameters.SFileName",
+								"type": "Expression"
+							},
+							"ContainerName": {
+								"value": "@pipeline().parameters.ContainerName",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"outputs": [
+					{
+						"referenceName": "Json1",
+						"type": "DatasetReference",
+						"parameters": {
+							"DSStorageAccountName": {
+								"value": "@pipeline().parameters.StorageAccountName",
+								"type": "Expression"
+							},
+							"FolderName": {
+								"value": "@pipeline().parameters.DFolderName",
+								"type": "Expression"
+							},
+							"FileName": {
+								"value": "@pipeline().parameters.DFileName",
+								"type": "Expression"
+							},
+							"ContainerName": {
+								"value": "@pipeline().parameters.ContainerName",
+								"type": "Expression"
+							}
+						}
+					}
+				]
+			}
+		],
+		"parameters": {
+			"StorageAccountName": {
+				"type": "string"
+			},
+			"SFolderName": {
+				"type": "string"
+			},
+			"SFileName": {
+				"type": "string"
+			},
+			"ContainerName": {
+				"type": "string"
+			},
+			"DFolderName": {
+				"type": "string"
+			},
+			"DFileName": {
+				"type": "string"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2023-03-09T04:21:17Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}

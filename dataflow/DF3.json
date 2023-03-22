@@ -1,0 +1,174 @@
+{
+	"name": "DF3",
+	"properties": {
+		"type": "MappingDataFlow",
+		"typeProperties": {
+			"sources": [
+				{
+					"dataset": {
+						"referenceName": "EmpDatSet",
+						"type": "DatasetReference"
+					},
+					"name": "Emp"
+				},
+				{
+					"dataset": {
+						"referenceName": "DepDatSet",
+						"type": "DatasetReference"
+					},
+					"name": "Dep"
+				}
+			],
+			"sinks": [
+				{
+					"dataset": {
+						"referenceName": "Output1",
+						"type": "DatasetReference"
+					},
+					"name": "sink1"
+				},
+				{
+					"dataset": {
+						"referenceName": "Output1",
+						"type": "DatasetReference"
+					},
+					"name": "sink2"
+				},
+				{
+					"dataset": {
+						"referenceName": "Output1",
+						"type": "DatasetReference"
+					},
+					"name": "sink3"
+				}
+			],
+			"transformations": [
+				{
+					"name": "Innerjoin1"
+				},
+				{
+					"name": "select1"
+				},
+				{
+					"name": "aggregate1"
+				},
+				{
+					"name": "filter1"
+				},
+				{
+					"name": "exists1"
+				},
+				{
+					"name": "split1"
+				},
+				{
+					"name": "derivedColumn1"
+				},
+				{
+					"name": "sort1"
+				},
+				{
+					"name": "pivot1",
+					"description": "for each department tell me how many managers are there and how many employees do they have. This you will get by reading the table row wise\n\n\nif you read column wise then it will be which managers handle multiple departments"
+				},
+				{
+					"name": "window1"
+				}
+			],
+			"scriptLines": [
+				"parameters{",
+				"     OFileName as string",
+				"}",
+				"source(output(",
+				"          EMPLOYEE_ID as integer,",
+				"          FIRST_NAME as string,",
+				"          LAST_NAME as string,",
+				"          EMAIL as string,",
+				"          PHONE_NUMBER as string,",
+				"          HIRE_DATE as string,",
+				"          JOB_ID as string,",
+				"          SALARY as integer,",
+				"          COMMISSION_PCT as string,",
+				"          MANAGER_ID as integer,",
+				"          DEPARTMENT_ID as integer",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> Emp",
+				"source(output(",
+				"          DEPARTMENT_ID as integer,",
+				"          DEPARTMENT_NAME as string,",
+				"          MANAGER_ID as integer,",
+				"          LOCATION_ID as string",
+				"     ),",
+				"     allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     ignoreNoFilesFound: false) ~> Dep",
+				"Emp, Dep join(Emp@DEPARTMENT_ID == Dep@DEPARTMENT_ID,",
+				"     joinType:'inner',",
+				"     matchType:'exact',",
+				"     ignoreSpaces: false,",
+				"     broadcast: 'auto')~> Innerjoin1",
+				"Innerjoin1 select(mapColumn(",
+				"          DEPARTMENT_NAME,",
+				"          SALARY",
+				"     ),",
+				"     partitionBy('hash', 1),",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true) ~> select1",
+				"select1 aggregate(groupBy(DEPARTMENT_NAME),",
+				"     SALARY = sum(SALARY)) ~> aggregate1",
+				"aggregate1 filter(greaterOrEqual(SALARY, 50000)) ~> filter1",
+				"Emp, Dep exists(Emp@DEPARTMENT_ID == Dep@DEPARTMENT_ID,",
+				"     negate:false,",
+				"     partitionBy('hash', 1),",
+				"     broadcast: 'auto')~> exists1",
+				"derivedColumn1 split(greaterOrEqual(SALARY, 5000),",
+				"     disjoint: false) ~> split1@(SalaryGreaterThan5000, LessThan5000)",
+				"exists1 derive(FIRST_NAME = upper(FIRST_NAME),",
+				"     partitionBy('hash', 1)) ~> derivedColumn1",
+				"split1@SalaryGreaterThan5000 sort(asc(FIRST_NAME, true),",
+				"     partitionBy('hash', 1)) ~> sort1",
+				"Emp pivot(groupBy(DEPARTMENT_ID),",
+				"     pivotBy(MANAGER_ID),",
+				"     {} = count(MANAGER_ID),",
+				"     columnNaming: '$N$V',",
+				"     lateral: true,",
+				"     partitionBy('hash', 1)) ~> pivot1",
+				"Emp window(over(DEPARTMENT_ID),",
+				"     asc(SALARY, true),",
+				"     AvgSala = avg(SALARY),",
+				"     partitionBy('hash', 1)) ~> window1",
+				"filter1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     partitionFileNames:[($OFileName)],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     mapColumn(",
+				"          DEPARTMENT_NAME,",
+				"          SALARY",
+				"     ),",
+				"     partitionBy('hash', 1)) ~> sink1",
+				"sort1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     partitionFileNames:['SAL_GT_5000.csv'],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     mapColumn(",
+				"          EMPLOYEE_ID,",
+				"          FIRST_NAME,",
+				"          LAST_NAME,",
+				"          SALARY,",
+				"          DEPARTMENT_ID",
+				"     ),",
+				"     partitionBy('hash', 1)) ~> sink2",
+				"pivot1 sink(allowSchemaDrift: true,",
+				"     validateSchema: false,",
+				"     partitionFileNames:['Pivot_Managers_Dept_Relationship.csv'],",
+				"     skipDuplicateMapInputs: true,",
+				"     skipDuplicateMapOutputs: true,",
+				"     partitionBy('hash', 1)) ~> sink3"
+			]
+		}
+	}
+}
