@@ -1,0 +1,1584 @@
+{
+	"$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+	"contentVersion": "1.0.0.0",
+	"parameters": {
+		"factoryName": {
+			"type": "string",
+			"metadata": "Data Factory name",
+			"defaultValue": "rb1811CopyPipeline"
+		},
+		"AzureBlobStorage1_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'AzureBlobStorage1'"
+		},
+		"GeneralizedJsonCopyLS_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'GeneralizedJsonCopyLS'"
+		},
+		"MixedLS_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'MixedLS'"
+		},
+		"rb1811ls1_connectionString": {
+			"type": "secureString",
+			"metadata": "Secure string for 'connectionString' of 'rb1811ls1'"
+		}
+	},
+	"variables": {
+		"factoryId": "[concat('Microsoft.DataFactory/factories/', parameters('factoryName'))]"
+	},
+	"resources": [
+		{
+			"name": "[concat(parameters('factoryName'), '/pipeline2')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Copy data1",
+						"type": "Copy",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"source": {
+								"type": "JsonSource",
+								"storeSettings": {
+									"type": "AzureBlobStorageReadSettings",
+									"recursive": true,
+									"enablePartitionDiscovery": false
+								},
+								"formatSettings": {
+									"type": "JsonReadSettings"
+								}
+							},
+							"sink": {
+								"type": "JsonSink",
+								"storeSettings": {
+									"type": "AzureBlobStorageWriteSettings"
+								},
+								"formatSettings": {
+									"type": "JsonWriteSettings"
+								}
+							},
+							"enableStaging": false
+						},
+						"inputs": [
+							{
+								"referenceName": "Json1",
+								"type": "DatasetReference",
+								"parameters": {
+									"DSStorageAccountName": {
+										"value": "@pipeline().parameters.StorageAccountName",
+										"type": "Expression"
+									},
+									"FolderName": {
+										"value": "@pipeline().parameters.SFolderName",
+										"type": "Expression"
+									},
+									"FileName": {
+										"value": "@pipeline().parameters.SFileName",
+										"type": "Expression"
+									},
+									"ContainerName": {
+										"value": "@pipeline().parameters.ContainerName",
+										"type": "Expression"
+									}
+								}
+							}
+						],
+						"outputs": [
+							{
+								"referenceName": "Json1",
+								"type": "DatasetReference",
+								"parameters": {
+									"DSStorageAccountName": {
+										"value": "@pipeline().parameters.StorageAccountName",
+										"type": "Expression"
+									},
+									"FolderName": {
+										"value": "@pipeline().parameters.DFolderName",
+										"type": "Expression"
+									},
+									"FileName": {
+										"value": "@pipeline().parameters.DFileName",
+										"type": "Expression"
+									},
+									"ContainerName": {
+										"value": "@pipeline().parameters.ContainerName",
+										"type": "Expression"
+									}
+								}
+							}
+						]
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"StorageAccountName": {
+						"type": "string"
+					},
+					"SFolderName": {
+						"type": "string"
+					},
+					"SFileName": {
+						"type": "string"
+					},
+					"ContainerName": {
+						"type": "string"
+					},
+					"DFolderName": {
+						"type": "string"
+					},
+					"DFileName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2023-03-09T04:21:17Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/Json1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pipeline3')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "GetMetadataFolder",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "pipeline3",
+								"type": "DatasetReference",
+								"parameters": {
+									"DFoldername": {
+										"value": "@pipeline().parameters.SFoldername",
+										"type": "Expression"
+									},
+									"DFilename": " "
+								}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobStorageReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "BinaryReadSettings"
+							}
+						}
+					},
+					{
+						"name": "ForEach1",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "GetMetadataFolder",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('GetMetadataFolder').output.childItems",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "If Condition1",
+									"type": "IfCondition",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"expression": {
+											"value": "@equals(item().type,'File')",
+											"type": "Expression"
+										},
+										"ifTrueActivities": [
+											{
+												"name": "Copy data1",
+												"type": "Copy",
+												"dependsOn": [],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "BinarySource",
+														"storeSettings": {
+															"type": "AzureBlobStorageReadSettings",
+															"recursive": true
+														},
+														"formatSettings": {
+															"type": "BinaryReadSettings"
+														}
+													},
+													"sink": {
+														"type": "BinarySink",
+														"storeSettings": {
+															"type": "AzureBlobStorageWriteSettings"
+														}
+													},
+													"enableStaging": false
+												},
+												"inputs": [
+													{
+														"referenceName": "pipeline3",
+														"type": "DatasetReference",
+														"parameters": {
+															"DFoldername": {
+																"value": "@pipeline().parameters.SFoldername",
+																"type": "Expression"
+															},
+															"DFilename": {
+																"value": "@item().name",
+																"type": "Expression"
+															}
+														}
+													}
+												],
+												"outputs": [
+													{
+														"referenceName": "pipeline3",
+														"type": "DatasetReference",
+														"parameters": {
+															"DFoldername": {
+																"value": "@last(split(item().name, '.'))",
+																"type": "Expression"
+															},
+															"DFilename": {
+																"value": "@item().name",
+																"type": "Expression"
+															}
+														}
+													}
+												]
+											}
+										]
+									}
+								}
+							]
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"SFoldername": {
+						"type": "string"
+					}
+				},
+				"variables": {
+					"Dfoldername": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2023-03-15T00:15:32Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/pipeline3')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pipeline4')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "GetMetadataFolder",
+						"type": "GetMetadata",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "pipeline3",
+								"type": "DatasetReference",
+								"parameters": {
+									"DFoldername": {
+										"value": "@pipeline().parameters.SFoldername",
+										"type": "Expression"
+									},
+									"DFilename": " "
+								}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobStorageReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "BinaryReadSettings"
+							}
+						}
+					},
+					{
+						"name": "ForEach1",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Filter1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Filter1').output.Value",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "If Condition1",
+									"type": "IfCondition",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"expression": {
+											"value": "@equals(item().type,'File')",
+											"type": "Expression"
+										},
+										"ifTrueActivities": [
+											{
+												"name": "Copy data1",
+												"type": "Copy",
+												"dependsOn": [
+													{
+														"activity": "Delete1",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "BinarySource",
+														"storeSettings": {
+															"type": "AzureBlobStorageReadSettings",
+															"recursive": true
+														},
+														"formatSettings": {
+															"type": "BinaryReadSettings"
+														}
+													},
+													"sink": {
+														"type": "BinarySink",
+														"storeSettings": {
+															"type": "AzureBlobStorageWriteSettings"
+														}
+													},
+													"enableStaging": false
+												},
+												"inputs": [
+													{
+														"referenceName": "pipeline3",
+														"type": "DatasetReference",
+														"parameters": {
+															"DFoldername": {
+																"value": "@pipeline().parameters.SFoldername",
+																"type": "Expression"
+															},
+															"DFilename": {
+																"value": "@item().name",
+																"type": "Expression"
+															}
+														}
+													}
+												],
+												"outputs": [
+													{
+														"referenceName": "pipeline3",
+														"type": "DatasetReference",
+														"parameters": {
+															"DFoldername": {
+																"value": "@last(split(item().name, '.'))",
+																"type": "Expression"
+															},
+															"DFilename": {
+																"value": "@item().name",
+																"type": "Expression"
+															}
+														}
+													}
+												]
+											},
+											{
+												"name": "Delete1",
+												"type": "Delete",
+												"dependsOn": [],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"dataset": {
+														"referenceName": "pipeline3",
+														"type": "DatasetReference",
+														"parameters": {
+															"DFoldername": "@last(split(item().name, '.'))",
+															"DFilename": "*"
+														}
+													},
+													"logStorageSettings": {
+														"linkedServiceName": {
+															"referenceName": "AzureBlobStorage1",
+															"type": "LinkedServiceReference"
+														},
+														"path": "json"
+													},
+													"enableLogging": true,
+													"storeSettings": {
+														"type": "AzureBlobStorageReadSettings",
+														"maxConcurrentConnections": 2,
+														"recursive": true,
+														"wildcardFileName": "*",
+														"enablePartitionDiscovery": false
+													}
+												}
+											}
+										]
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "Filter1",
+						"type": "Filter",
+						"dependsOn": [
+							{
+								"activity": "GetMetadataFolder",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('GetMetadataFolder').output.childItems",
+								"type": "Expression"
+							},
+							"condition": {
+								"value": "@not(equals(last(split(item().name, '.')), 'txt'))",
+								"type": "Expression"
+							}
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"SFoldername": {
+						"type": "string"
+					}
+				},
+				"variables": {
+					"Dfoldername": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2023-03-18T02:04:03Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/pipeline3')]",
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pipeline5')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "GetMetadataFolder",
+						"type": "GetMetadata",
+						"dependsOn": [
+							{
+								"activity": "Web2",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataset": {
+								"referenceName": "pipeline3",
+								"type": "DatasetReference",
+								"parameters": {
+									"DFoldername": {
+										"value": "@pipeline().parameters.SFoldername",
+										"type": "Expression"
+									},
+									"DFilename": " "
+								}
+							},
+							"fieldList": [
+								"childItems"
+							],
+							"storeSettings": {
+								"type": "AzureBlobStorageReadSettings",
+								"recursive": true,
+								"enablePartitionDiscovery": false
+							},
+							"formatSettings": {
+								"type": "BinaryReadSettings"
+							}
+						}
+					},
+					{
+						"name": "ForEach1",
+						"type": "ForEach",
+						"dependsOn": [
+							{
+								"activity": "Filter1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('Filter1').output.Value",
+								"type": "Expression"
+							},
+							"isSequential": true,
+							"activities": [
+								{
+									"name": "If Condition1",
+									"type": "IfCondition",
+									"dependsOn": [],
+									"userProperties": [],
+									"typeProperties": {
+										"expression": {
+											"value": "@equals(item().type,'File')",
+											"type": "Expression"
+										},
+										"ifTrueActivities": [
+											{
+												"name": "Copy data1",
+												"type": "Copy",
+												"dependsOn": [
+													{
+														"activity": "Delete1",
+														"dependencyConditions": [
+															"Succeeded"
+														]
+													}
+												],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"source": {
+														"type": "BinarySource",
+														"storeSettings": {
+															"type": "AzureBlobStorageReadSettings",
+															"recursive": true
+														},
+														"formatSettings": {
+															"type": "BinaryReadSettings"
+														}
+													},
+													"sink": {
+														"type": "BinarySink",
+														"storeSettings": {
+															"type": "AzureBlobStorageWriteSettings"
+														}
+													},
+													"enableStaging": false
+												},
+												"inputs": [
+													{
+														"referenceName": "pipeline3",
+														"type": "DatasetReference",
+														"parameters": {
+															"DFoldername": {
+																"value": "@pipeline().parameters.SFoldername",
+																"type": "Expression"
+															},
+															"DFilename": {
+																"value": "@item().name",
+																"type": "Expression"
+															}
+														}
+													}
+												],
+												"outputs": [
+													{
+														"referenceName": "pipeline3",
+														"type": "DatasetReference",
+														"parameters": {
+															"DFoldername": {
+																"value": "@last(split(item().name, '.'))",
+																"type": "Expression"
+															},
+															"DFilename": {
+																"value": "@item().name",
+																"type": "Expression"
+															}
+														}
+													}
+												]
+											},
+											{
+												"name": "Delete1",
+												"type": "Delete",
+												"dependsOn": [],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"dataset": {
+														"referenceName": "pipeline3",
+														"type": "DatasetReference",
+														"parameters": {
+															"DFoldername": "@last(split(item().name, '.'))",
+															"DFilename": "*"
+														}
+													},
+													"logStorageSettings": {
+														"linkedServiceName": {
+															"referenceName": "AzureBlobStorage1",
+															"type": "LinkedServiceReference"
+														},
+														"path": "json"
+													},
+													"enableLogging": true,
+													"storeSettings": {
+														"type": "AzureBlobStorageReadSettings",
+														"maxConcurrentConnections": 2,
+														"recursive": true,
+														"wildcardFileName": "*",
+														"enablePartitionDiscovery": false
+													}
+												}
+											}
+										]
+									}
+								}
+							]
+						}
+					},
+					{
+						"name": "Filter1",
+						"type": "Filter",
+						"dependsOn": [
+							{
+								"activity": "GetMetadataFolder",
+								"dependencyConditions": [
+									"Completed"
+								]
+							}
+						],
+						"userProperties": [],
+						"typeProperties": {
+							"items": {
+								"value": "@activity('GetMetadataFolder').output.childItems",
+								"type": "Expression"
+							},
+							"condition": {
+								"value": "@not(equals(last(split(item().name, '.')), 'txt'))",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Web1",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Until1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"url": "https://dummy.restapiexample.com/api/v1/employees",
+							"method": "GET",
+							"headers": {}
+						}
+					},
+					{
+						"name": "Web2",
+						"type": "WebActivity",
+						"dependsOn": [
+							{
+								"activity": "Web1",
+								"dependencyConditions": [
+									"Succeeded"
+								]
+							}
+						],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"url": "https://rb1811sa1.blob.core.windows.net/json/source2/blobfilename.json?sp=racwl&st=2023-03-17T01:18:21Z&se=2023-05-17T09:18:21Z&spr=https&sv=2021-12-02&sr=c&sig=FQwDG02VgyoXmq%2FlSs21W%2FhjjcEYWss7NOJva4QLT6o%3D",
+							"method": "PUT",
+							"headers": {
+								"x-ms-blob-type": "BlockBlob"
+							},
+							"body": {
+								"value": "@activity('Web1').output",
+								"type": "Expression"
+							}
+						}
+					},
+					{
+						"name": "Until1",
+						"type": "Until",
+						"dependsOn": [],
+						"userProperties": [],
+						"typeProperties": {
+							"expression": {
+								"value": "@variables('triggerFileName')",
+								"type": "Expression"
+							},
+							"activities": [
+								{
+									"name": "CheckFileExists",
+									"type": "GetMetadata",
+									"dependsOn": [],
+									"policy": {
+										"timeout": "0.12:00:00",
+										"retry": 0,
+										"retryIntervalInSeconds": 30,
+										"secureOutput": false,
+										"secureInput": false
+									},
+									"userProperties": [],
+									"typeProperties": {
+										"dataset": {
+											"referenceName": "pipeline3",
+											"type": "DatasetReference",
+											"parameters": {
+												"DFoldername": {
+													"value": "@pipeline().parameters.SFoldername",
+													"type": "Expression"
+												},
+												"DFilename": "t.txt"
+											}
+										},
+										"fieldList": [
+											"exists"
+										],
+										"storeSettings": {
+											"type": "AzureBlobStorageReadSettings",
+											"recursive": true,
+											"enablePartitionDiscovery": false
+										},
+										"formatSettings": {
+											"type": "BinaryReadSettings"
+										}
+									}
+								},
+								{
+									"name": "If Condition2",
+									"type": "IfCondition",
+									"dependsOn": [
+										{
+											"activity": "CheckFileExists",
+											"dependencyConditions": [
+												"Succeeded"
+											]
+										}
+									],
+									"userProperties": [],
+									"typeProperties": {
+										"expression": {
+											"value": "@activity('CheckFileExists').output.exists",
+											"type": "Expression"
+										},
+										"ifFalseActivities": [
+											{
+												"name": "Wait1",
+												"type": "Wait",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"waitTimeInSeconds": 5
+												}
+											}
+										],
+										"ifTrueActivities": [
+											{
+												"name": "Set variable1",
+												"type": "SetVariable",
+												"dependsOn": [],
+												"userProperties": [],
+												"typeProperties": {
+													"variableName": "triggerFileName",
+													"value": {
+														"value": "@bool(1)",
+														"type": "Expression"
+													}
+												}
+											}
+										]
+									}
+								}
+							],
+							"timeout": "0.12:00:00"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"SFoldername": {
+						"type": "string"
+					}
+				},
+				"variables": {
+					"Dfoldername": {
+						"type": "String"
+					},
+					"triggerFileName": {
+						"type": "Boolean",
+						"defaultValue": false
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2023-03-18T01:19:27Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/pipeline3')]",
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pipeline6')]",
+			"type": "Microsoft.DataFactory/factories/pipelines",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"activities": [
+					{
+						"name": "Data flow",
+						"type": "ExecuteDataFlow",
+						"dependsOn": [],
+						"policy": {
+							"timeout": "0.12:00:00",
+							"retry": 0,
+							"retryIntervalInSeconds": 30,
+							"secureOutput": false,
+							"secureInput": false
+						},
+						"userProperties": [],
+						"typeProperties": {
+							"dataflow": {
+								"referenceName": "DF3",
+								"type": "DataFlowReference",
+								"parameters": {
+									"OFileName": {
+										"value": "'@{pipeline().parameters.OFileName}'",
+										"type": "Expression"
+									}
+								},
+								"datasetParameters": {
+									"Emp": {},
+									"Dep": {},
+									"sink1": {},
+									"sink2": {},
+									"sink3": {}
+								}
+							},
+							"staging": {},
+							"compute": {
+								"coreCount": 8,
+								"computeType": "General"
+							},
+							"traceLevel": "Fine"
+						}
+					}
+				],
+				"policy": {
+					"elapsedTimeMetric": {},
+					"cancelAfter": {}
+				},
+				"parameters": {
+					"OFileName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"lastPublishTime": "2023-03-20T03:56:53Z"
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/dataflows/DF3')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DepDatSet')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "rb1811ls1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "dep.csv",
+						"folderPath": "source3",
+						"container": "json"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "DEPARTMENT_ID",
+						"type": "String"
+					},
+					{
+						"name": "DEPARTMENT_NAME",
+						"type": "String"
+					},
+					{
+						"name": "MANAGER_ID",
+						"type": "String"
+					},
+					{
+						"name": "LOCATION_ID",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/rb1811ls1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/EmpDatSet')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "rb1811ls1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": "emp.csv",
+						"folderPath": "source3",
+						"container": "json"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": [
+					{
+						"name": "EMPLOYEE_ID",
+						"type": "String"
+					},
+					{
+						"name": "FIRST_NAME",
+						"type": "String"
+					},
+					{
+						"name": "LAST_NAME",
+						"type": "String"
+					},
+					{
+						"name": "EMAIL",
+						"type": "String"
+					},
+					{
+						"name": "PHONE_NUMBER",
+						"type": "String"
+					},
+					{
+						"name": "HIRE_DATE",
+						"type": "String"
+					},
+					{
+						"name": "JOB_ID",
+						"type": "String"
+					},
+					{
+						"name": "SALARY",
+						"type": "String"
+					},
+					{
+						"name": "COMMISSION_PCT",
+						"type": "String"
+					},
+					{
+						"name": "MANAGER_ID",
+						"type": "String"
+					},
+					{
+						"name": "DEPARTMENT_ID",
+						"type": "String"
+					}
+				]
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/rb1811ls1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Json1')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "GeneralizedJsonCopyLS",
+					"type": "LinkedServiceReference",
+					"parameters": {
+						"StorageAccountName": {
+							"value": "@dataset().DSStorageAccountName",
+							"type": "Expression"
+						}
+					}
+				},
+				"parameters": {
+					"DSStorageAccountName": {
+						"type": "string"
+					},
+					"FolderName": {
+						"type": "string"
+					},
+					"FileName": {
+						"type": "string"
+					},
+					"ContainerName": {
+						"type": "String"
+					}
+				},
+				"annotations": [],
+				"type": "Json",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": {
+							"value": "@dataset().FileName",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@dataset().FolderName",
+							"type": "Expression"
+						},
+						"container": {
+							"value": "@dataset().ContainerName",
+							"type": "Expression"
+						}
+					}
+				},
+				"schema": {}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/GeneralizedJsonCopyLS')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/Output1')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "rb1811ls1",
+					"type": "LinkedServiceReference"
+				},
+				"annotations": [],
+				"type": "DelimitedText",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"folderPath": "source3",
+						"container": "json"
+					},
+					"columnDelimiter": ",",
+					"escapeChar": "\\",
+					"firstRowAsHeader": true,
+					"quoteChar": "\""
+				},
+				"schema": []
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/rb1811ls1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/pipeline3')]",
+			"type": "Microsoft.DataFactory/factories/datasets",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"linkedServiceName": {
+					"referenceName": "AzureBlobStorage1",
+					"type": "LinkedServiceReference"
+				},
+				"parameters": {
+					"DFoldername": {
+						"type": "string"
+					},
+					"DFilename": {
+						"type": "string",
+						"defaultValue": " "
+					}
+				},
+				"annotations": [],
+				"type": "Binary",
+				"typeProperties": {
+					"location": {
+						"type": "AzureBlobStorageLocation",
+						"fileName": {
+							"value": "@dataset().DFilename",
+							"type": "Expression"
+						},
+						"folderPath": {
+							"value": "@dataset().DFoldername",
+							"type": "Expression"
+						},
+						"container": "json"
+					}
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/linkedServices/AzureBlobStorage1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/AzureBlobStorage1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('AzureBlobStorage1_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/GeneralizedJsonCopyLS')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"parameters": {
+					"StorageAccountName": {
+						"type": "string"
+					}
+				},
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('GeneralizedJsonCopyLS_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/MixedLS')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('MixedLS_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/rb1811ls1')]",
+			"type": "Microsoft.DataFactory/factories/linkedServices",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"annotations": [],
+				"type": "AzureBlobStorage",
+				"typeProperties": {
+					"connectionString": "[parameters('rb1811ls1_connectionString')]"
+				}
+			},
+			"dependsOn": []
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DF2')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "EmpDatSet",
+								"type": "DatasetReference"
+							},
+							"name": "Emp"
+						},
+						{
+							"dataset": {
+								"referenceName": "DepDatSet",
+								"type": "DatasetReference"
+							},
+							"name": "Dep"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "Output1",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						}
+					],
+					"transformations": [
+						{
+							"name": "Innerjoin1"
+						}
+					],
+					"scriptLines": [
+						"parameters{",
+						"     OFileName as string",
+						"}",
+						"source(output(",
+						"          EMPLOYEE_ID as string,",
+						"          FIRST_NAME as string,",
+						"          LAST_NAME as string,",
+						"          EMAIL as string,",
+						"          PHONE_NUMBER as string,",
+						"          HIRE_DATE as string,",
+						"          JOB_ID as string,",
+						"          SALARY as string,",
+						"          COMMISSION_PCT as string,",
+						"          MANAGER_ID as string,",
+						"          DEPARTMENT_ID as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> Emp",
+						"source(output(",
+						"          DEPARTMENT_ID as string,",
+						"          DEPARTMENT_NAME as string,",
+						"          MANAGER_ID as string,",
+						"          LOCATION_ID as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> Dep",
+						"Emp, Dep join(Emp@DEPARTMENT_ID == Dep@DEPARTMENT_ID,",
+						"     joinType:'inner',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> Innerjoin1",
+						"Innerjoin1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     partitionFileNames:[($OFileName)],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     mapColumn(",
+						"          FIRST_NAME,",
+						"          LAST_NAME,",
+						"          DEPARTMENT_NAME,",
+						"          SALARY,",
+						"          MANAGER_ID = Dep@MANAGER_ID",
+						"     ),",
+						"     partitionBy('hash', 1)) ~> sink1"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/EmpDatSet')]",
+				"[concat(variables('factoryId'), '/datasets/DepDatSet')]",
+				"[concat(variables('factoryId'), '/datasets/Output1')]"
+			]
+		},
+		{
+			"name": "[concat(parameters('factoryName'), '/DF3')]",
+			"type": "Microsoft.DataFactory/factories/dataflows",
+			"apiVersion": "2018-06-01",
+			"properties": {
+				"type": "MappingDataFlow",
+				"typeProperties": {
+					"sources": [
+						{
+							"dataset": {
+								"referenceName": "EmpDatSet",
+								"type": "DatasetReference"
+							},
+							"name": "Emp"
+						},
+						{
+							"dataset": {
+								"referenceName": "DepDatSet",
+								"type": "DatasetReference"
+							},
+							"name": "Dep"
+						}
+					],
+					"sinks": [
+						{
+							"dataset": {
+								"referenceName": "Output1",
+								"type": "DatasetReference"
+							},
+							"name": "sink1"
+						},
+						{
+							"dataset": {
+								"referenceName": "Output1",
+								"type": "DatasetReference"
+							},
+							"name": "sink2"
+						},
+						{
+							"dataset": {
+								"referenceName": "Output1",
+								"type": "DatasetReference"
+							},
+							"name": "sink3"
+						}
+					],
+					"transformations": [
+						{
+							"name": "Innerjoin1"
+						},
+						{
+							"name": "select1"
+						},
+						{
+							"name": "aggregate1"
+						},
+						{
+							"name": "filter1"
+						},
+						{
+							"name": "exists1"
+						},
+						{
+							"name": "split1"
+						},
+						{
+							"name": "derivedColumn1"
+						},
+						{
+							"name": "sort1"
+						},
+						{
+							"name": "pivot1",
+							"description": "for each department tell me how many managers are there and how many employees do they have. This you will get by reading the table row wise\n\n\nif you read column wise then it will be which managers handle multiple departments"
+						},
+						{
+							"name": "window1"
+						}
+					],
+					"scriptLines": [
+						"parameters{",
+						"     OFileName as string",
+						"}",
+						"source(output(",
+						"          EMPLOYEE_ID as integer,",
+						"          FIRST_NAME as string,",
+						"          LAST_NAME as string,",
+						"          EMAIL as string,",
+						"          PHONE_NUMBER as string,",
+						"          HIRE_DATE as string,",
+						"          JOB_ID as string,",
+						"          SALARY as integer,",
+						"          COMMISSION_PCT as string,",
+						"          MANAGER_ID as integer,",
+						"          DEPARTMENT_ID as integer",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> Emp",
+						"source(output(",
+						"          DEPARTMENT_ID as integer,",
+						"          DEPARTMENT_NAME as string,",
+						"          MANAGER_ID as integer,",
+						"          LOCATION_ID as string",
+						"     ),",
+						"     allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     ignoreNoFilesFound: false) ~> Dep",
+						"Emp, Dep join(Emp@DEPARTMENT_ID == Dep@DEPARTMENT_ID,",
+						"     joinType:'inner',",
+						"     matchType:'exact',",
+						"     ignoreSpaces: false,",
+						"     broadcast: 'auto')~> Innerjoin1",
+						"Innerjoin1 select(mapColumn(",
+						"          DEPARTMENT_NAME,",
+						"          SALARY",
+						"     ),",
+						"     partitionBy('hash', 1),",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true) ~> select1",
+						"select1 aggregate(groupBy(DEPARTMENT_NAME),",
+						"     SALARY = sum(SALARY)) ~> aggregate1",
+						"aggregate1 filter(greaterOrEqual(SALARY, 50000)) ~> filter1",
+						"Emp, Dep exists(Emp@DEPARTMENT_ID == Dep@DEPARTMENT_ID,",
+						"     negate:false,",
+						"     partitionBy('hash', 1),",
+						"     broadcast: 'auto')~> exists1",
+						"derivedColumn1 split(greaterOrEqual(SALARY, 5000),",
+						"     disjoint: false) ~> split1@(SalaryGreaterThan5000, LessThan5000)",
+						"exists1 derive(FIRST_NAME = upper(FIRST_NAME),",
+						"     partitionBy('hash', 1)) ~> derivedColumn1",
+						"split1@SalaryGreaterThan5000 sort(asc(FIRST_NAME, true),",
+						"     partitionBy('hash', 1)) ~> sort1",
+						"Emp pivot(groupBy(DEPARTMENT_ID),",
+						"     pivotBy(MANAGER_ID),",
+						"     {} = count(MANAGER_ID),",
+						"     columnNaming: '$N$V',",
+						"     lateral: true,",
+						"     partitionBy('hash', 1)) ~> pivot1",
+						"Emp window(over(DEPARTMENT_ID),",
+						"     asc(SALARY, true),",
+						"     AvgSala = avg(SALARY),",
+						"     partitionBy('hash', 1)) ~> window1",
+						"filter1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     partitionFileNames:[($OFileName)],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     mapColumn(",
+						"          DEPARTMENT_NAME,",
+						"          SALARY",
+						"     ),",
+						"     partitionBy('hash', 1)) ~> sink1",
+						"sort1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     partitionFileNames:['SAL_GT_5000.csv'],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     mapColumn(",
+						"          EMPLOYEE_ID,",
+						"          FIRST_NAME,",
+						"          LAST_NAME,",
+						"          SALARY,",
+						"          DEPARTMENT_ID",
+						"     ),",
+						"     partitionBy('hash', 1)) ~> sink2",
+						"pivot1 sink(allowSchemaDrift: true,",
+						"     validateSchema: false,",
+						"     partitionFileNames:['Pivot_Managers_Dept_Relationship.csv'],",
+						"     skipDuplicateMapInputs: true,",
+						"     skipDuplicateMapOutputs: true,",
+						"     partitionBy('hash', 1)) ~> sink3"
+					]
+				}
+			},
+			"dependsOn": [
+				"[concat(variables('factoryId'), '/datasets/EmpDatSet')]",
+				"[concat(variables('factoryId'), '/datasets/DepDatSet')]",
+				"[concat(variables('factoryId'), '/datasets/Output1')]"
+			]
+		}
+	]
+}
