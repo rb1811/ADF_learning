@@ -20,7 +20,7 @@
 						"type": "DatasetReference",
 						"parameters": {
 							"DFoldername": {
-								"value": "@pipeline().parameters.SFoldername",
+								"value": "@pipeline().globalParameters.SFolderName",
 								"type": "Expression"
 							},
 							"DFilename": " "
@@ -106,7 +106,7 @@
 												"type": "DatasetReference",
 												"parameters": {
 													"DFoldername": {
-														"value": "@pipeline().parameters.SFoldername",
+														"value": "@pipeline().globalParameters.SFolderName",
 														"type": "Expression"
 													},
 													"DFilename": {
@@ -140,11 +140,6 @@
 				}
 			}
 		],
-		"parameters": {
-			"SFoldername": {
-				"type": "string"
-			}
-		},
 		"variables": {
 			"Dfoldername": {
 				"type": "String"
