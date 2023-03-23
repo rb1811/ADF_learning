@@ -80,6 +80,9 @@
 				},
 				{
 					"name": "window1"
+				},
+				{
+					"name": "surrogateKey1"
 				}
 			],
 			"udfLibraries": [
@@ -150,10 +153,14 @@
 				"     columnNaming: '$N$V',",
 				"     lateral: true,",
 				"     partitionBy('hash', 1)) ~> pivot1",
-				"Emp window(over(DEPARTMENT_ID),",
+				"surrogateKey1 window(over(DEPARTMENT_ID),",
 				"     asc(SALARY, true),",
 				"     AvgSala = avg(SALARY),",
 				"     partitionBy('hash', 1)) ~> window1",
+				"Emp keyGenerate(output(DBID as long),",
+				"     startAt: 1L,",
+				"     stepValue: 1L,",
+				"     partitionBy('hash', 1)) ~> surrogateKey1",
 				"filter1 sink(allowSchemaDrift: true,",
 				"     validateSchema: false,",
 				"     partitionFileNames:[($OFileName)],",
