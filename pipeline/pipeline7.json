@@ -154,7 +154,10 @@
 									"referenceName": "pipeline3_copy1",
 									"type": "DatasetReference",
 									"parameters": {
-										"DFoldername": "@(last(split(item().name, '.')))"
+										"DFoldername": {
+											"value": "@last(split(item().name, '.'))",
+											"type": "Expression"
+										}
 									}
 								},
 								"fieldList": [
@@ -243,7 +246,8 @@
 										"DFoldername": {
 											"value": "@last(split(item().name, '.'))",
 											"type": "Expression"
-										}
+										},
+										"DFilename": " "
 									}
 								}
 							]
