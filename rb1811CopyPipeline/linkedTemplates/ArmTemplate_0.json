@@ -1557,47 +1557,39 @@
 									"userProperties": [],
 									"typeProperties": {
 										"expression": {
-											"value": "@not(equals(last(split(item().name, '.')), 'txt'))",
+											"value": "@and(not(equals(last(split(item().name, '.')), 'txt')), activity('Get Metadata1').output.exists)",
 											"type": "Expression"
-										}
-									}
-								},
-								{
-									"name": "Delete1",
-									"type": "Delete",
-									"dependsOn": [
-										{
-											"activity": "If Condition1",
-											"dependencyConditions": [
-												"Succeeded"
-											]
-										}
-									],
-									"policy": {
-										"timeout": "0.12:00:00",
-										"retry": 0,
-										"retryIntervalInSeconds": 30,
-										"secureOutput": false,
-										"secureInput": false
-									},
-									"userProperties": [],
-									"typeProperties": {
-										"dataset": {
-											"referenceName": "pipeline3_copy1",
-											"type": "DatasetReference",
-											"parameters": {
-												"DFoldername": {
-													"value": "@last(split(item().name, '.'))",
-													"type": "Expression"
+										},
+										"ifTrueActivities": [
+											{
+												"name": "Delete2",
+												"type": "Delete",
+												"dependsOn": [],
+												"policy": {
+													"timeout": "0.12:00:00",
+													"retry": 0,
+													"retryIntervalInSeconds": 30,
+													"secureOutput": false,
+													"secureInput": false
+												},
+												"userProperties": [],
+												"typeProperties": {
+													"dataset": {
+														"referenceName": "pipeline3_copy1",
+														"type": "DatasetReference",
+														"parameters": {
+															"DFoldername": "@last(split(item().name, '.'))"
+														}
+													},
+													"enableLogging": false,
+													"storeSettings": {
+														"type": "AzureBlobStorageReadSettings",
+														"recursive": true,
+														"enablePartitionDiscovery": false
+													}
 												}
 											}
-										},
-										"enableLogging": false,
-										"storeSettings": {
-											"type": "AzureBlobStorageReadSettings",
-											"recursive": true,
-											"enablePartitionDiscovery": false
-										}
+										]
 									}
 								},
 								{
@@ -1617,7 +1609,10 @@
 											"referenceName": "pipeline3_copy1",
 											"type": "DatasetReference",
 											"parameters": {
-												"DFoldername": "@(last(split(item().name, '.')))"
+												"DFoldername": {
+													"value": "@last(split(item().name, '.'))",
+													"type": "Expression"
+												}
 											}
 										},
 										"fieldList": [
@@ -1706,7 +1701,8 @@
 												"DFoldername": {
 													"value": "@last(split(item().name, '.'))",
 													"type": "Expression"
-												}
+												},
+												"DFilename": " "
 											}
 										}
 									]
