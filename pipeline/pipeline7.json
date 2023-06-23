@@ -94,7 +94,7 @@
 							"userProperties": [],
 							"typeProperties": {
 								"expression": {
-									"value": "@not(equals(last(split(item().name, '.')), 'txt'))",
+									"value": "@and(not(equals(last(split(item().name, '.')), 'txt')), activity('Get Metadata1').output.exists)",
 									"type": "Expression"
 								}
 							}
